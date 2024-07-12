@@ -32,7 +32,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: mapScreen(), // Replace this with mapScreen()
+      home: MapScreen(), // Replace this with mapScreen()
     );
   }
 }

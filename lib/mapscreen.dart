@@ -1,21 +1,25 @@
 import 'dart:convert';
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_geojson/flutter_map_geojson.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class mapScreen extends StatefulWidget {
+class MapScreen extends StatefulWidget {
   @override
-  _mapScreenState createState() => _mapScreenState();
+  _MapScreenState createState() => _MapScreenState();
 }
 
-class _mapScreenState extends State<mapScreen> {
+class _MapScreenState extends State<MapScreen> {
   var geoParser = GeoJsonParser();
   final LayerHitNotifier hitNotifier = ValueNotifier(null);
   List<NamedPolygon> namedPolygons = [];
   SharedPreferences? prefs;
+  MapController mapController = MapController();
+  TextEditingController searchController = TextEditingController();
+  List<NamedPolygon> searchResults = [];
+  FocusNode searchFocusNode = FocusNode();
 
   @override
   void initState() {
@@ -52,155 +56,263 @@ class _mapScreenState extends State<mapScreen> {
 
           final polygon = Polygon(
             points: points,
-            color: visited ? Colors.green.withOpacity(0.75) : Colors.grey.withOpacity(0.5),
-            borderColor: visited ? Colors.green : Colors.grey,
-            borderStrokeWidth: 1,
+            color: visited
+                ? CupertinoColors.activeGreen.withOpacity(0.5)
+                : CupertinoColors.systemGrey4.withOpacity(0.3),
+            borderColor: visited
+                ? CupertinoColors.activeGreen
+                : CupertinoColors.systemGrey2,
+            borderStrokeWidth: 1.5,
             hitValue: nombre,
           );
 
           namedPolygons.add(NamedPolygon(nombre, polygon, visited));
         }
+        else if (geometry["type"] == "MultiPolygon"){
+          final coordinates = geometry['coordinates'] as List;
+
+          for (var coord in coordinates){
+            final points = coord[0].map<LatLng>((e) {
+              if (e is List && e.length == 2) {
+                return LatLng(e[1], e[0]);
+              } else {
+                throw Exception('Invalid coordinate format');
+              }
+            }).toList();
+
+            final visited = prefs?.getBool(nombre) ?? false;
+
+            final polygon = Polygon(
+              points: points,
+              color: visited
+                  ? CupertinoColors.activeGreen.withOpacity(0.5)
+                  : CupertinoColors.systemGrey4.withOpacity(0.3),
+              borderColor: visited
+                  ? CupertinoColors.activeGreen
+                  : CupertinoColors.systemGrey2,
+              borderStrokeWidth: 1.5,
+              hitValue: nombre,
+            );
+
+            namedPolygons.add(NamedPolygon(nombre, polygon, visited));
+          }
+        }
       }
 
       setState(() {});
     } catch (e) {
-      print('Error loading GeoJSON: $e');
+      // print('Error loading GeoJSON: $e');
     }
   }
 
   void _showMunicipalityName(NamedPolygon namedPolygon) {
-    showModalBottomSheet(
+    mapController.move(namedPolygon.polygon.points.first, 12.0);
+    showCupertinoModalPopup(
       context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
       builder: (context) {
-        return DraggableScrollableSheet(
-          initialChildSize: 0.5,
-          minChildSize: 0.2,
-          maxChildSize: 0.8,
-          builder: (context, scrollController) {
-            return Container(
-              margin: const EdgeInsets.all(4.0),
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(38.0),
-                  topRight: Radius.circular(38.0),
-                  bottomLeft: Radius.circular(38.0),
-                  bottomRight: Radius.circular(38.0),
-                ),
-              ),
-              child: Column(
-                children: [
-                  Container(
-                    margin: const EdgeInsets.symmetric(vertical: 10.0),
-                    height: 5.0,
-                    width: 50.0,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[300],
-                      borderRadius: BorderRadius.circular(10.0),
-                    ),
-                  ),
-                  Padding(
-                    padding: EdgeInsets.all(16.0),
-                    child: Text(
-                      namedPolygon.name,
-                      style: TextStyle(fontSize: 24.0),
-                    ),
-                  ),
-                  Padding(
-                    padding: EdgeInsets.all(16.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        Text('Visited:'),
-                        Checkbox(
-                          value: namedPolygon.visited,
-                          onChanged: (bool? value) {
-                            setState(() {
-                              namedPolygon.visited = value ?? false;
-                              namedPolygon.polygon = Polygon(
-                                points: namedPolygon.polygon.points,
-                                color: namedPolygon.visited
-                                    ? Colors.green.withOpacity(0.75)
-                                    : Colors.grey.withOpacity(0.35),
-                                borderColor: namedPolygon.visited
-                                    ? Colors.green
-                                    : Colors.grey,
-                                borderStrokeWidth: 1,
-                                hitValue: namedPolygon.name,
-                              );
-                              prefs?.setBool(namedPolygon.name, namedPolygon.visited);
-                            });
-                            Navigator.of(context).pop();
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                  Padding(
-                    padding: EdgeInsets.all(16.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        ElevatedButton(
-                          onPressed: () {
-                            Navigator.of(context).pop();
-                          },
-                          child: Text('Close'),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            );
-          },
+        return CupertinoActionSheet(
+          title: Text(namedPolygon.name, style: const TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold)),
+          actions: [
+            CupertinoActionSheetAction(
+              child: Text('Visitat? ${namedPolygon.visited ? "Si" : "No"}'),
+              onPressed: () {},
+            ),
+            CupertinoActionSheetAction(
+              child: const Text('Marca/desmarca com a visitat'),
+              onPressed: () {
+                setState(() {
+                  for (var polygon in namedPolygons) {
+                    if (polygon.name == namedPolygon.name) {
+                      polygon.visited = !polygon.visited;
+                    polygon.polygon = Polygon(
+                      points: polygon.polygon.points,
+                      color: polygon.visited
+                  ? CupertinoColors.activeGreen.withOpacity(0.5)
+                  : CupertinoColors.systemGrey4.withOpacity(0.3),
+              borderColor: polygon.visited
+                  ? CupertinoColors.activeGreen
+                  : CupertinoColors.systemGrey2,
+                      borderStrokeWidth: 1.5,
+                      hitValue: polygon.name,
+                    );
+                    prefs?.setBool(polygon.name, polygon.visited);
+                    }
+                  }
+                });
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+          cancelButton: CupertinoActionSheetAction(
+            child: const Text('Cancel·lar'),
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+          ),
         );
       },
     );
   }
 
+  void _selectMunicipality(NamedPolygon namedPolygon) {
+    setState(() {
+      namedPolygon.visited = true;
+      namedPolygon.polygon = Polygon(
+        points: namedPolygon.polygon.points,
+        color: CupertinoColors.activeGreen.withOpacity(0.3),
+        borderColor: CupertinoColors.activeGreen,
+        borderStrokeWidth: 1.5,
+        hitValue: namedPolygon.name,
+      );
+      prefs?.setBool(namedPolygon.name, namedPolygon.visited);
+    });
+    mapController.move(
+        namedPolygon.polygon.points.first, 12.0); // Adjust zoom level as needed
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Map Screen'),
-      ),
-      body: Center(
-        child: FlutterMap(
-          options: MapOptions(
-            initialCenter: LatLng(39.3, -0.5),
-            initialZoom: 8.0,
+    return CupertinoPageScaffold(
+      child: Stack(
+        children: [
+          GestureDetector(
+            onTap: () {
+              setState(() {
+                searchResults = [];
+              });
+            },
+            child: FlutterMap(
+              mapController: mapController,
+              options: const MapOptions(
+                initialCenter: LatLng(39.45, -0.5),
+                initialZoom: 8.0,
+              ),
+              children: [
+                // TileLayer(
+                //   urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                //   subdomains: const ['a', 'b', 'c'],
+                // ),
+                MouseRegion(
+                  hitTestBehavior: HitTestBehavior.deferToChild,
+                  cursor: SystemMouseCursors.click,
+                  child: GestureDetector(
+                    onTap: () {
+                      final LayerHitResult? hitResult = hitNotifier.value;
+                      if (hitResult != null) {
+                        final value = hitResult.hitValues.first;
+                        if (value is String) {
+                          final namedPolygon = namedPolygons
+                              .firstWhere((element) => element.name == value);
+                          _showMunicipalityName(namedPolygon);
+                        }
+                      }
+                    },
+                    child: PolygonLayer(
+                      polygons: namedPolygons.map((e) => e.polygon).toList(),
+                      hitNotifier: hitNotifier,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-          children: [
-            // TileLayer(
-            //   urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-            //   subdomains: const ['a', 'b', 'c'],
-            // ),
-            MouseRegion(
-              hitTestBehavior: HitTestBehavior.deferToChild,
-              cursor: SystemMouseCursors.click,
-              child: GestureDetector(
-                onTap: () {
-                  final LayerHitResult? hitResult = hitNotifier.value;
-                  if (hitResult != null) {
-                    final value = hitResult.hitValues.first;
-                    if (value is String) {
-                      final namedPolygon = namedPolygons.firstWhere(
-                          (element) => element.name == value);
-                      _showMunicipalityName(namedPolygon);
-                    }
+          Positioned(
+            top: 60.0, // Position it near the top of the screen
+            left: 16.0,
+            right: 16.0,
+            child: CupertinoSearchTextField(
+              decoration: BoxDecoration(
+                color: CupertinoColors.systemBackground,
+                borderRadius: BorderRadius.circular(12.0),
+              ),
+              placeholder: "Busca un municipi",
+              controller: searchController,
+              focusNode: searchFocusNode,
+              onChanged: (query) {
+                setState(() {
+                  if (query.isEmpty) {
+                    searchResults = [];
+                    FocusScope.of(context).unfocus();
+                  } else {
+                    searchResults = namedPolygons
+                        .where((element) => element.name
+                            .toLowerCase()
+                            .contains(query.toLowerCase()))
+                        .toList();
                   }
-                },
-                child: PolygonLayer(
-                  polygons: namedPolygons.map((e) => e.polygon).toList(),
-                  hitNotifier: hitNotifier,
+                });
+              },
+              onSubmitted: (query) {
+                if (searchResults.isNotEmpty) {
+                  _selectMunicipality(searchResults.first);
+                }
+              },
+              onSuffixTap: () {
+                searchController.clear();
+                setState(() {
+                  searchResults = [];
+                });
+                FocusScope.of(context)
+                    .unfocus(); // Close the keyboard when the close button is clicked
+              },
+            ),
+          ),
+          if (searchResults.isNotEmpty)
+            Positioned(
+              top: 100.0, // Position it just below the search bar
+              left: 10.0,
+              right: 10.0,
+              child: Container(
+                margin: const EdgeInsets.all(8.0), // Add margins
+                decoration: BoxDecoration(
+                  color: CupertinoColors.systemBackground,
+                  borderRadius:
+                      BorderRadius.circular(12.0), // Add rounded corners
+                  boxShadow: const [
+                     BoxShadow(
+                      color: CupertinoColors.systemGrey,
+                      blurRadius: 10.0,
+                      offset: Offset(0, 5),
+                    ),
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12.0),
+                  child: CupertinoScrollbar(
+                    child: CupertinoListSection.insetGrouped(
+                      decoration: const BoxDecoration(
+                        color: CupertinoColors.systemGrey6,
+                      ),
+                      children: List.generate(searchResults.length, (index) {
+                        final item = searchResults[index];
+                        return Container(
+                          margin: const EdgeInsets.symmetric(vertical: 4.0),
+                          decoration: BoxDecoration(
+                            color: CupertinoColors.systemBackground,
+                            borderRadius: BorderRadius.circular(12.0),
+                            border: Border.all(
+                              color: CupertinoColors.systemGrey4,
+                            ),
+                          ),
+                          child: CupertinoListTile(
+                            title: Text(item.name),
+                            onTap: () {
+                              _showMunicipalityName(item);
+                              searchController.clear();
+                              setState(() {
+                                searchResults = [];
+                              });
+                              FocusScope.of(context).unfocus();
+                            },
+                          ),
+                        );
+                      }),
+                    ),
+                  ),
                 ),
               ),
             ),
-          ],
-        ),
+        ],
       ),
     );
   }
