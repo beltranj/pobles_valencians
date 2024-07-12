@@ -1,9 +1,6 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; // Import the services package
-
-// Import libraries to use Flutter Map
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_geojson/flutter_map_geojson.dart';
 import 'package:latlong2/latlong.dart';
@@ -15,7 +12,6 @@ class mapScreen extends StatefulWidget {
 
 class _mapScreenState extends State<mapScreen> {
   var geoParser = GeoJsonParser();
-  List<Polygon> data = [];
   final LayerHitNotifier hitNotifier = ValueNotifier(null);
   List<NamedPolygon> namedPolygons = [];
 
@@ -27,51 +23,16 @@ class _mapScreenState extends State<mapScreen> {
 
   Future<void> _loadGeoJson() async {
     try {
-      // Load the GeoJSON file from the assets folder
       final geoJSONfile = await rootBundle.loadString('assets/data.geojson');
-
-      // Parse the GeoJSON data as a string
       final geoJsonData = json.decode(geoJSONfile);
-
-      // Extract the features from the GeoJSON data
       final features = geoJsonData['features'] as List;
-    
 
       for (var municipio in features) {
         final nombre = municipio['properties']['NOMBRE'];
-        
-        
         final geometry = municipio['geometry'];
         final coordinates = geometry['coordinates'][0] as List;
-        // print(coordinates);
 
-        // if( geometry['type'] == 'MultiPolygon'){
-
-        //   final coordinates = geometry['coordinates'][0] as List;
-        //   // print(coordinates);
-
-        //   final points = coordinates.map<List<LatLng>>((e) {
-        //     if (e is List && e.length == 2) {
-        //       return e.map<LatLng>((e) => LatLng(e[1], e[0])).toList();
-        //     } else {
-        //       throw Exception('Invalid coordinate format');
-        //     }
-        //   }).toList();
-        //   print(points);
-
-        //   final polygon = Polygon(
-        //     points: points,
-        //     color: Colors.blue.withOpacity(0.5),
-        //     borderColor: Colors.blue,
-        //     borderStrokeWidth: 2,
-        //   );
-
-        //   namedPolygons.add(NamedPolygon(nombre, polygon));
-        // }
-
-        if(geometry['type'] == 'Polygon'){
-          final coordinates = geometry['coordinates'][0] as List;
-          // print(coordinates);
+        if (geometry['type'] == 'Polygon') {
           final points = coordinates.map<LatLng>((e) {
             if (e is List && e.length == 2) {
               return LatLng(e[1], e[0]);
@@ -79,7 +40,7 @@ class _mapScreenState extends State<mapScreen> {
               throw Exception('Invalid coordinate format');
             }
           }).toList();
-          // print(points);
+
           final polygon = Polygon(
             points: points,
             color: Colors.blue.withOpacity(0.5),
@@ -90,50 +51,101 @@ class _mapScreenState extends State<mapScreen> {
 
           namedPolygons.add(NamedPolygon(nombre, polygon));
         }
-      //  final points = coordinates.map<LatLng>((e) {
-      //   if (e is List && e.length == 2) {
-      //     return LatLng(e[1], e[0]);
-      //   } else {
-      //     throw Exception('Invalid coordinate format');
-      //   }
-      // }).toList();
-      //   print(points);
-        
-      //   final polygon = Polygon(
-      //     points: points,
-      //     color: Colors.blue.withOpacity(0.5),
-      //     borderColor: Colors.blue,
-      //     borderStrokeWidth: 2,
-      //   );
+      }
 
-        // namedPolygons.add(NamedPolygon(nombre, polygon));
-
-}
-
-      // // Set the data variable to the polygons
-      // for (var i = 0; i < geoParser.polygons.length; i++) {
-      //   namedPolygons.add(NamedPolygon(geoParser.polygons[i].properties, geoParser.polygons[i]));
-      // }
-
-      setState(() {
-        // data = namedPolygons.map((namedPolygon) => namedPolygon.polygon).toList();
-      });
+      setState(() {});
     } catch (e) {
       print('Error loading GeoJSON: $e');
     }
-
   }
 
-void _showMunicipalityName(String name) {
+  void _showMunicipalityName(NamedPolygon namedPolygon) {
     showModalBottomSheet(
       context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
       builder: (context) {
-        return Container(
-          padding: EdgeInsets.all(16.0),
-          child: Text(
-            name,
-            style: TextStyle(fontSize: 24.0),
-          ),
+        return DraggableScrollableSheet(
+          initialChildSize: 0.5,
+          minChildSize: 0.2,
+          maxChildSize: 0.8,
+          builder: (context, scrollController) {
+            return Container(
+              margin: const EdgeInsets.all(4.0),
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(38.0),
+                  topRight: Radius.circular(38.0),
+                  bottomLeft: Radius.circular(38.0),
+                  bottomRight: Radius.circular(38.0),
+                ),
+              ),
+              child: Column(
+                children: [
+                  Container(
+                    margin: const EdgeInsets.symmetric(vertical: 10.0),
+                    height: 5.0,
+                    width: 50.0,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(10.0),
+                    ),
+                  ),
+                  Padding(
+                    padding: EdgeInsets.all(16.0),
+                    child: Text(
+                      namedPolygon.name,
+                      style: TextStyle(fontSize: 24.0),
+                    ),
+                  ),
+                  Padding(
+                    padding: EdgeInsets.all(16.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        Text('Visited:'),
+                        Checkbox(
+                          value: namedPolygon.visited,
+                          onChanged: (bool? value) {
+                            setState(() {
+                              namedPolygon.visited = value ?? false;
+                              namedPolygon.polygon = Polygon(
+                                points: namedPolygon.polygon.points,
+                                color: namedPolygon.visited
+                                    ? Colors.green.withOpacity(0.5)
+                                    : Colors.blue.withOpacity(0.5),
+                                borderColor: namedPolygon.visited
+                                    ? Colors.green
+                                    : Colors.blue,
+                                borderStrokeWidth: 2,
+                                hitValue: namedPolygon.name,
+                              );
+                            });
+                            Navigator.of(context).pop();
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                  Padding(
+                    padding: EdgeInsets.all(16.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        ElevatedButton(
+                          onPressed: () {
+                            Navigator.of(context).pop();
+                          },
+                          child: Text('Close'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
         );
       },
     );
@@ -165,8 +177,9 @@ void _showMunicipalityName(String name) {
                   if (hitResult != null) {
                     final value = hitResult.hitValues.first;
                     if (value is String) {
-                      _showMunicipalityName(value);
-                      print(value);
+                      final namedPolygon = namedPolygons.firstWhere(
+                          (element) => element.name == value);
+                      _showMunicipalityName(namedPolygon);
                     }
                   }
                 },
@@ -183,9 +196,9 @@ void _showMunicipalityName(String name) {
   }
 }
 
-class NamedPolygon{
+class NamedPolygon {
   final String name;
-  final Polygon polygon;
+  Polygon polygon;
   bool visited = false;
 
   NamedPolygon(this.name, this.polygon);
