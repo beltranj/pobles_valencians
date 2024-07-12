@@ -1,9 +1,10 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; // Import the services package
+import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_geojson/flutter_map_geojson.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class mapScreen extends StatefulWidget {
   @override
@@ -14,11 +15,17 @@ class _mapScreenState extends State<mapScreen> {
   var geoParser = GeoJsonParser();
   final LayerHitNotifier hitNotifier = ValueNotifier(null);
   List<NamedPolygon> namedPolygons = [];
+  SharedPreferences? prefs;
 
   @override
   void initState() {
     super.initState();
+    _loadPreferences();
     _loadGeoJson();
+  }
+
+  Future<void> _loadPreferences() async {
+    prefs = await SharedPreferences.getInstance();
   }
 
   Future<void> _loadGeoJson() async {
@@ -41,15 +48,17 @@ class _mapScreenState extends State<mapScreen> {
             }
           }).toList();
 
+          final visited = prefs?.getBool(nombre) ?? false;
+
           final polygon = Polygon(
             points: points,
-            color: Colors.blue.withOpacity(0.5),
-            borderColor: Colors.blue,
-            borderStrokeWidth: 2,
+            color: visited ? Colors.green.withOpacity(0.75) : Colors.grey.withOpacity(0.5),
+            borderColor: visited ? Colors.green : Colors.grey,
+            borderStrokeWidth: 1,
             hitValue: nombre,
           );
 
-          namedPolygons.add(NamedPolygon(nombre, polygon));
+          namedPolygons.add(NamedPolygon(nombre, polygon, visited));
         }
       }
 
@@ -113,14 +122,15 @@ class _mapScreenState extends State<mapScreen> {
                               namedPolygon.polygon = Polygon(
                                 points: namedPolygon.polygon.points,
                                 color: namedPolygon.visited
-                                    ? Colors.green.withOpacity(0.5)
-                                    : Colors.blue.withOpacity(0.5),
+                                    ? Colors.green.withOpacity(0.75)
+                                    : Colors.grey.withOpacity(0.35),
                                 borderColor: namedPolygon.visited
                                     ? Colors.green
-                                    : Colors.blue,
-                                borderStrokeWidth: 2,
+                                    : Colors.grey,
+                                borderStrokeWidth: 1,
                                 hitValue: namedPolygon.name,
                               );
+                              prefs?.setBool(namedPolygon.name, namedPolygon.visited);
                             });
                             Navigator.of(context).pop();
                           },
@@ -160,14 +170,14 @@ class _mapScreenState extends State<mapScreen> {
       body: Center(
         child: FlutterMap(
           options: MapOptions(
-            initialCenter: LatLng(39.1, -0.01),
+            initialCenter: LatLng(39.3, -0.5),
             initialZoom: 8.0,
           ),
           children: [
-            TileLayer(
-              urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-              subdomains: const ['a', 'b', 'c'],
-            ),
+            // TileLayer(
+            //   urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+            //   subdomains: const ['a', 'b', 'c'],
+            // ),
             MouseRegion(
               hitTestBehavior: HitTestBehavior.deferToChild,
               cursor: SystemMouseCursors.click,
@@ -199,7 +209,7 @@ class _mapScreenState extends State<mapScreen> {
 class NamedPolygon {
   final String name;
   Polygon polygon;
-  bool visited = false;
+  bool visited;
 
-  NamedPolygon(this.name, this.polygon);
+  NamedPolygon(this.name, this.polygon, this.visited);
 }
