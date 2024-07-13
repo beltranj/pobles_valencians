@@ -7,6 +7,8 @@ import 'package:latlong2/latlong.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class MapScreen extends StatefulWidget {
+  const MapScreen({super.key});
+
   @override
   _MapScreenState createState() => _MapScreenState();
 }
@@ -20,6 +22,8 @@ class _MapScreenState extends State<MapScreen> {
   TextEditingController searchController = TextEditingController();
   List<NamedPolygon> searchResults = [];
   FocusNode searchFocusNode = FocusNode();
+  LatLng initialCenter = const LatLng(39.55, -0.5); // initial center of the map
+  double initialZoom = 7.8; // initial zoom level
 
   @override
   void initState() {
@@ -67,11 +71,10 @@ class _MapScreenState extends State<MapScreen> {
           );
 
           namedPolygons.add(NamedPolygon(nombre, polygon, visited));
-        }
-        else if (geometry["type"] == "MultiPolygon"){
+        } else if (geometry["type"] == "MultiPolygon") {
           final coordinates = geometry['coordinates'] as List;
 
-          for (var coord in coordinates){
+          for (var coord in coordinates) {
             final points = coord[0].map<LatLng>((e) {
               if (e is List && e.length == 2) {
                 return LatLng(e[1], e[0]);
@@ -106,15 +109,17 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   void _showMunicipalityName(NamedPolygon namedPolygon) {
-    mapController.move(namedPolygon.polygon.points.first, 12.0);
+    mapController.move(namedPolygon.polygon.points.first, 10.0);
     showCupertinoModalPopup(
       context: context,
       builder: (context) {
         return CupertinoActionSheet(
-          title: Text(namedPolygon.name, style: const TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold)),
+          title: Text(namedPolygon.name,
+              style:
+                  const TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold)),
           actions: [
             CupertinoActionSheetAction(
-              child: Text('Visitat? ${namedPolygon.visited ? "Si" : "No"}'),
+              child: Text('Visitat? ${namedPolygon.visited ? "Sí" : "No"}'),
               onPressed: () {},
             ),
             CupertinoActionSheetAction(
@@ -124,18 +129,18 @@ class _MapScreenState extends State<MapScreen> {
                   for (var polygon in namedPolygons) {
                     if (polygon.name == namedPolygon.name) {
                       polygon.visited = !polygon.visited;
-                    polygon.polygon = Polygon(
-                      points: polygon.polygon.points,
-                      color: polygon.visited
-                  ? CupertinoColors.activeGreen.withOpacity(0.5)
-                  : CupertinoColors.systemGrey4.withOpacity(0.3),
-              borderColor: polygon.visited
-                  ? CupertinoColors.activeGreen
-                  : CupertinoColors.systemGrey2,
-                      borderStrokeWidth: 1.5,
-                      hitValue: polygon.name,
-                    );
-                    prefs?.setBool(polygon.name, polygon.visited);
+                      polygon.polygon = Polygon(
+                        points: polygon.polygon.points,
+                        color: polygon.visited
+                            ? CupertinoColors.activeGreen.withOpacity(0.5)
+                            : CupertinoColors.systemGrey4.withOpacity(0.3),
+                        borderColor: polygon.visited
+                            ? CupertinoColors.activeGreen
+                            : CupertinoColors.systemGrey2,
+                        borderStrokeWidth: 1.5,
+                        hitValue: polygon.name,
+                      );
+                      prefs?.setBool(polygon.name, polygon.visited);
                     }
                   }
                 });
@@ -166,13 +171,151 @@ class _MapScreenState extends State<MapScreen> {
       );
       prefs?.setBool(namedPolygon.name, namedPolygon.visited);
     });
-    mapController.move(
-        namedPolygon.polygon.points.first, 12.0); // Adjust zoom level as needed
+    mapController.move(namedPolygon.polygon.points.first, 8.0);
+  }
+
+  void _centerMap() {
+    mapController.move(initialCenter, initialZoom);
+  }
+
+  void _showAboutDialog() {
+    showCupertinoDialog(
+      context: context,
+      builder: (context) {
+        return CupertinoAlertDialog(
+          title: const Text("Sobre l'aplicació"),
+          content: const Text(
+              'Esta aplicació mostra un mapa amb els municipis de la Comunitat Valenciana. Pots buscar un municipi i marcar-lo com a visitat.'),
+          actions: [
+            CupertinoDialogAction(
+              child: const Text('Cerrar'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showConfigDialog() {
+    showCupertinoDialog(
+      context: context,
+      builder: (context) {
+        return CupertinoAlertDialog(
+          title: const Text('Configuració de l\'aplicació'),
+          content: const Text(
+              'Des d\' aquí pots restaurar el mapa per marcar tots els municipis com a no visitats o enviar suggeriments.'),
+          actions: [
+            CupertinoDialogAction(
+              child: const Text('Restaurar el mapa'),
+              onPressed: () {
+                Navigator.of(context).pop();
+                _confirmResetMap();
+              },
+            ),
+            CupertinoDialogAction(
+              child: const Text('Enviar suggeriments'),
+              onPressed: () {
+                Navigator.of(context).pop();
+                _sendSuggestions();
+              },
+            ),
+            CupertinoDialogAction(
+              child: const Text('Cerrar'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _confirmResetMap() {
+    showCupertinoDialog(
+      context: context,
+      builder: (context) {
+        return CupertinoAlertDialog(
+          title: const Text('Confirmació'),
+          content: const Text('Estàs segur que vols restaurar el mapa?'),
+          actions: [
+            CupertinoDialogAction(
+              child: const Text('Sí'),
+              onPressed: () {
+                Navigator.of(context).pop();
+                _resetMap();
+              },
+            ),
+            CupertinoDialogAction(
+              child: const Text('No'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _resetMap() {
+    setState(() {
+      for (var polygon in namedPolygons) {
+        polygon.visited = false;
+        polygon.polygon = Polygon(
+          points: polygon.polygon.points,
+          color: CupertinoColors.systemGrey4.withOpacity(0.3),
+          borderColor: CupertinoColors.systemGrey2,
+          borderStrokeWidth: 1.5,
+          hitValue: polygon.name,
+        );
+      }
+      prefs?.clear();
+    });
+  }
+
+  void _sendSuggestions() {
+    // Aquí puedes implementar la funcionalidad para enviar sugerencias
+    showCupertinoDialog(
+      context: context,
+      builder: (context) {
+        return CupertinoAlertDialog(
+          title: const Text('Enviar suggeriments'),
+          content: const Text(
+              'Funcionalitat per enviar suggeriments no implementada.'),
+          actions: [
+            CupertinoDialogAction(
+              child: const Text('Cerrar'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
+      navigationBar: CupertinoNavigationBar(
+        backgroundColor: CupertinoColors.systemGrey6.withOpacity(0.3),
+        leading: CupertinoButton(
+          padding: EdgeInsets.zero,
+          child: const Icon(CupertinoIcons.settings),
+          onPressed: _showConfigDialog,
+        ),
+        middle: const Text('Municipis de la Comunitat Valenciana'),
+        trailing: CupertinoButton(
+          padding: EdgeInsets.zero,
+          child: const Icon(CupertinoIcons.info),
+          onPressed: _showAboutDialog,
+        ),
+      ),
       child: Stack(
         children: [
           GestureDetector(
@@ -183,15 +326,11 @@ class _MapScreenState extends State<MapScreen> {
             },
             child: FlutterMap(
               mapController: mapController,
-              options: const MapOptions(
-                initialCenter: LatLng(39.45, -0.5),
-                initialZoom: 8.0,
+              options: MapOptions(
+                initialCenter: initialCenter,
+                initialZoom: initialZoom,
               ),
               children: [
-                // TileLayer(
-                //   urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-                //   subdomains: const ['a', 'b', 'c'],
-                // ),
                 MouseRegion(
                   hitTestBehavior: HitTestBehavior.deferToChild,
                   cursor: SystemMouseCursors.click,
@@ -217,12 +356,12 @@ class _MapScreenState extends State<MapScreen> {
             ),
           ),
           Positioned(
-            top: 60.0, // Position it near the top of the screen
+            top: 100.0,
             left: 16.0,
             right: 16.0,
             child: CupertinoSearchTextField(
               decoration: BoxDecoration(
-                color: CupertinoColors.systemBackground,
+                color: CupertinoColors.systemGrey6.withOpacity(0.3),
                 borderRadius: BorderRadius.circular(12.0),
               ),
               placeholder: "Busca un municipi",
@@ -234,11 +373,15 @@ class _MapScreenState extends State<MapScreen> {
                     searchResults = [];
                     FocusScope.of(context).unfocus();
                   } else {
-                    searchResults = namedPolygons
-                        .where((element) => element.name
-                            .toLowerCase()
-                            .contains(query.toLowerCase()))
-                        .toList();
+                    final uniqueNames = <String>{};
+                    searchResults = namedPolygons.where((element) {
+                      final isUnique =
+                          uniqueNames.add(element.name.toLowerCase());
+                      return element.name
+                              .toLowerCase()
+                              .contains(query.toLowerCase()) &&
+                          isUnique;
+                    }).toList();
                   }
                 });
               },
@@ -252,66 +395,102 @@ class _MapScreenState extends State<MapScreen> {
                 setState(() {
                   searchResults = [];
                 });
-                FocusScope.of(context)
-                    .unfocus(); // Close the keyboard when the close button is clicked
+                FocusScope.of(context).unfocus();
               },
             ),
           ),
           if (searchResults.isNotEmpty)
             Positioned(
-              top: 100.0, // Position it just below the search bar
-              left: 10.0,
-              right: 10.0,
+              top:
+                  140.0, // Ajuste para dejar espacio entre la barra de búsqueda y la lista
+              left: 16.0,
+              right: 16.0,
               child: Container(
-                margin: const EdgeInsets.all(8.0), // Add margins
                 decoration: BoxDecoration(
                   color: CupertinoColors.systemBackground,
-                  borderRadius:
-                      BorderRadius.circular(12.0), // Add rounded corners
+                  borderRadius: BorderRadius.circular(12.0),
                   boxShadow: const [
-                     BoxShadow(
+                    BoxShadow(
                       color: CupertinoColors.systemGrey,
                       blurRadius: 10.0,
                       offset: Offset(0, 5),
                     ),
                   ],
                 ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(12.0),
-                  child: CupertinoScrollbar(
-                    child: CupertinoListSection.insetGrouped(
-                      decoration: const BoxDecoration(
-                        color: CupertinoColors.systemGrey6,
-                      ),
-                      children: List.generate(searchResults.length, (index) {
-                        final item = searchResults[index];
-                        return Container(
-                          margin: const EdgeInsets.symmetric(vertical: 4.0),
+
+                // Lista de resultados de búsqueda
+                child: CupertinoScrollbar(
+                  child: ListView.builder(
+                    padding: EdgeInsets.zero,
+                    shrinkWrap: true,
+                    itemCount: searchResults.length,
+                    itemBuilder: (context, index) {
+                      final item = searchResults[index];
+                      return GestureDetector(
+                        onTap: () {
+                          _showMunicipalityName(item);
+                          searchController.clear();
+                          setState(() {
+                            searchResults = [];
+                          });
+                          FocusScope.of(context).unfocus();
+                        },
+                        child: Container(
+                          margin: const EdgeInsets.symmetric(
+                              vertical: 8.0, horizontal: 16.0),
+                          padding: const EdgeInsets.all(16.0),
                           decoration: BoxDecoration(
-                            color: CupertinoColors.systemBackground,
+                            color: CupertinoColors.white,
                             borderRadius: BorderRadius.circular(12.0),
-                            border: Border.all(
-                              color: CupertinoColors.systemGrey4,
-                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: CupertinoColors.systemGrey4
+                                    .withOpacity(0.2),
+                                blurRadius: 5,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
                           ),
-                          child: CupertinoListTile(
-                            title: Text(item.name),
-                            onTap: () {
-                              _showMunicipalityName(item);
-                              searchController.clear();
-                              setState(() {
-                                searchResults = [];
-                              });
-                              FocusScope.of(context).unfocus();
-                            },
+                          child: Row(
+                            children: [
+                              const Icon(
+                                CupertinoIcons.location_solid,
+                                size: 24.0,
+                              ),
+                              const SizedBox(width: 12.0),
+                              Expanded(
+                                child: Text(
+                                  item.name,
+                                  style: TextStyle(fontSize: 16.0),
+                                ),
+                              ),
+                              Icon(
+                                CupertinoIcons.forward,
+                                color: CupertinoColors.systemGrey,
+                              ),
+                            ],
                           ),
-                        );
-                      }),
-                    ),
+                        ),
+                      );
+                    },
                   ),
                 ),
               ),
             ),
+
+          // Botón para centrar el mapa
+          Positioned(
+            bottom: 20.0,
+            right: 20.0,
+            child: CupertinoButton.filled(
+              padding: const EdgeInsets.all(12.0),
+              borderRadius: BorderRadius.circular(30.0),
+              onPressed: _centerMap,
+              child: const Icon(
+                CupertinoIcons.location_fill,
+              ),
+            ),
+          ),
         ],
       ),
     );
