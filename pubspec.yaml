@@ -34,6 +34,7 @@ dependencies:
   flutter_map_geojson: ^1.0.8
   shared_preferences: ^2.0.6
   super_cupertino_navigation_bar: ^2.1.2
+  url_launcher: ^6.0.12
 
 
   # The following adds the Cupertino Icons font to your application.

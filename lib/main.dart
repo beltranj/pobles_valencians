@@ -7,7 +7,7 @@ void main() {
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({Key? key});
+  const MyApp({super.key});
 
   // This widget is the root of your application.
   @override
@@ -32,7 +32,7 @@ class MyApp extends StatelessWidget {
         ),
       ),
     );
-    return CupertinoApp(
+    return const CupertinoApp(
       theme: customTheme,
       home: MapScreen(), // Use the mapScreen class as the home screen
       );

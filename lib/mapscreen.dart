@@ -5,6 +5,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_geojson/flutter_map_geojson.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
@@ -185,10 +186,10 @@ class _MapScreenState extends State<MapScreen> {
         return CupertinoAlertDialog(
           title: const Text("Sobre l'aplicació"),
           content: const Text(
-              'Esta aplicació mostra un mapa amb els municipis de la Comunitat Valenciana. Pots buscar un municipi i marcar-lo com a visitat.'),
+              'Esta aplicació mostra un mapa amb els municipis de la Comunitat Valenciana. Pots buscar un municipi i marcar-lo com a visitat.\n\n Desenvolupat per @beltranj'),
           actions: [
             CupertinoDialogAction(
-              child: const Text('Cerrar'),
+              child: const Text('Tancar'),
               onPressed: () {
                 Navigator.of(context).pop();
               },
@@ -223,7 +224,7 @@ class _MapScreenState extends State<MapScreen> {
               },
             ),
             CupertinoDialogAction(
-              child: const Text('Cerrar'),
+              child: const Text('Tancar'),
               onPressed: () {
                 Navigator.of(context).pop();
               },
@@ -243,7 +244,7 @@ class _MapScreenState extends State<MapScreen> {
           content: const Text('Estàs segur que vols restaurar el mapa?'),
           actions: [
             CupertinoDialogAction(
-              child: const Text('Sí'),
+              child: const Text('Sí', style: TextStyle(color: CupertinoColors.destructiveRed)),
               onPressed: () {
                 Navigator.of(context).pop();
                 _resetMap();
@@ -278,21 +279,32 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   void _sendSuggestions() {
-    // Aquí puedes implementar la funcionalidad para enviar sugerencias
     showCupertinoDialog(
       context: context,
       builder: (context) {
         return CupertinoAlertDialog(
           title: const Text('Enviar suggeriments'),
-          content: const Text(
-              'Funcionalitat per enviar suggeriments no implementada.'),
+          content: const Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Pots enviar suggeriments a través de X o Instagram (@beltrnjordi) o a través del correu electrònic)',
+              ),
+            ],
+          ),
           actions: [
             CupertinoDialogAction(
-              child: const Text('Cerrar'),
+                child: const Text('Abrir Google Forms'),
+                onPressed: () =>
+                    launchUrl(Uri.parse('https://forms.gle/WQnGJHMmkmzz9iaf9')),
+              ),
+            CupertinoDialogAction(
+              child: const Text('Tancar'),
               onPressed: () {
                 Navigator.of(context).pop();
               },
             ),
+              
           ],
         );
       },
@@ -363,6 +375,13 @@ class _MapScreenState extends State<MapScreen> {
               decoration: BoxDecoration(
                 color: CupertinoColors.systemGrey6.withOpacity(0.3),
                 borderRadius: BorderRadius.circular(12.0),
+                boxShadow: [
+                  BoxShadow(
+                    color: CupertinoColors.systemGrey6.withOpacity(0.3),
+                    blurRadius: 10.0,
+                    offset: const Offset(0, 5),
+                  ),
+                ],
               ),
               placeholder: "Busca un municipi",
               controller: searchController,
@@ -407,11 +426,11 @@ class _MapScreenState extends State<MapScreen> {
               right: 16.0,
               child: Container(
                 decoration: BoxDecoration(
-                  color: CupertinoColors.systemBackground,
+                  color: CupertinoColors.systemBackground.withOpacity(0.3),
                   borderRadius: BorderRadius.circular(12.0),
                   boxShadow: const [
                     BoxShadow(
-                      color: CupertinoColors.systemGrey,
+                      color: CupertinoColors.systemBackground,
                       blurRadius: 10.0,
                       offset: Offset(0, 5),
                     ),
