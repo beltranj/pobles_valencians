@@ -294,7 +294,7 @@ class _MapScreenState extends State<MapScreen> {
           ),
           actions: [
             CupertinoDialogAction(
-                child: const Text('Abrir Google Forms'),
+                child: const Text('Obrir Google Forms'),
                 onPressed: () =>
                     launchUrl(Uri.parse('https://forms.gle/WQnGJHMmkmzz9iaf9')),
               ),
@@ -313,6 +313,9 @@ class _MapScreenState extends State<MapScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
+
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
         backgroundColor: CupertinoColors.systemGrey6.withOpacity(0.3),
@@ -368,9 +371,9 @@ class _MapScreenState extends State<MapScreen> {
             ),
           ),
           Positioned(
-            top: 100.0,
-            left: 16.0,
-            right: 16.0,
+            top: screenHeight * 0.075,
+            left: screenWidth * 0.05,
+            right: screenWidth * 0.05,
             child: CupertinoSearchTextField(
               decoration: BoxDecoration(
                 color: CupertinoColors.systemGrey6.withOpacity(0.3),
@@ -420,10 +423,9 @@ class _MapScreenState extends State<MapScreen> {
           ),
           if (searchResults.isNotEmpty)
             Positioned(
-              top:
-                  140.0, // Ajuste para dejar espacio entre la barra de búsqueda y la lista
-              left: 16.0,
-              right: 16.0,
+              top: screenHeight * 0.125, // Ajuste para dejar espacio entre la barra de búsqueda y la lista
+              left: screenWidth * 0.05,
+              right: screenWidth * 0.05,
               child: Container(
                 decoration: BoxDecoration(
                   color: CupertinoColors.systemBackground.withOpacity(0.3),
@@ -483,7 +485,7 @@ class _MapScreenState extends State<MapScreen> {
                                   style: TextStyle(fontSize: 16.0),
                                 ),
                               ),
-                              Icon(
+                              const Icon(
                                 CupertinoIcons.forward,
                                 color: CupertinoColors.systemGrey,
                               ),
