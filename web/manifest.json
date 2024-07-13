@@ -1,6 +1,6 @@
 {
-    "name": "pobles_valencians",
-    "short_name": "pobles_valencians",
+    "name": "municipis_valencians",
+    "short_name": "municipis_valencians",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
