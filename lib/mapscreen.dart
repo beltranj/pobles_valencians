@@ -185,7 +185,7 @@ class _MapScreenState extends State<MapScreen> {
         return CupertinoAlertDialog(
           title: const Text("Sobre l'aplicació"),
           content: const Text(
-              'Esta aplicació mostra un mapa amb els municipis de la Comunitat Valenciana. Pots buscar un municipi i marcar-lo com a visitat.\n\n Desenvolupat per @beltranj'),
+              'Esta aplicació mostra un mapa amb els municipis de la Comunitat Valenciana. Pots buscar un municipi i marcar-lo com a visitat.\n Idea de @enmaaarc i @polfmarti \n Desenvolupat per @beltrnjordi'),
           actions: [
             CupertinoDialogAction(
               child: const Text('Tancar'),
