@@ -118,11 +118,10 @@ class _MapScreenState extends State<MapScreen> {
           title: Text(namedPolygon.name,
               style:
                   const TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold)),
+          message: namedPolygon.visited
+              ? const Text('Ja has visitat aquest municipi')
+              : const Text('Marca aquest municipi com a visitat'),
           actions: [
-            CupertinoActionSheetAction(
-              child: Text('Visitat? ${namedPolygon.visited ? "Sí" : "No"}'),
-              onPressed: () {},
-            ),
             CupertinoActionSheetAction(
               child: const Text('Marca/desmarca com a visitat'),
               onPressed: () {
