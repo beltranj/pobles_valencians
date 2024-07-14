@@ -25,8 +25,10 @@ class _MapScreenState extends State<MapScreen> {
   TextEditingController searchController = TextEditingController();
   List<NamedPolygon> searchResults = [];
   FocusNode searchFocusNode = FocusNode();
-  LatLng initialCenter = const LatLng(39.55, -0.5); // initial center of the map
+  LatLng initialCenter = const LatLng(39.45, -0.5); // initial center of the map
   double initialZoom = 7.8; // initial zoom level
+  double actualZoom = 0.0;
+
 
   @override
   void initState() {
@@ -337,7 +339,7 @@ class _MapScreenState extends State<MapScreen> {
           onPressed: _showConfigDialog,
           child: const Icon(CupertinoIcons.settings),
         ),
-        middle: const Text('Municipis de la Comunitat Valenciana'),
+        middle: const Text('Municipis de la Comunitat Valenciana', style: TextStyle(fontSize: 15)),
         trailing: CupertinoButton(
           padding: EdgeInsets.zero,
           onPressed: _showAboutDialog,
@@ -384,7 +386,7 @@ class _MapScreenState extends State<MapScreen> {
             ),
           ),
           Positioned(
-            top: screenHeight * 0.075,
+            top: screenHeight * 0.03,
             left: screenWidth * 0.05,
             right: screenWidth * 0.05,
             child: CupertinoSearchTextField(
@@ -436,12 +438,12 @@ class _MapScreenState extends State<MapScreen> {
           ),
           if (searchResults.isNotEmpty)
             Positioned(
-              top: screenHeight * 0.125, // Ajuste para dejar espacio entre la barra de búsqueda y la lista
+              top: screenHeight * 0.1, // Ajuste para dejar espacio entre la barra de búsqueda y la lista
               left: screenWidth * 0.05,
               right: screenWidth * 0.05,
               child: Container(
                 decoration: BoxDecoration(
-                  color: CupertinoColors.systemBackground,
+                  color: CupertinoColors.systemGrey6,
                   borderRadius: BorderRadius.circular(12.0),
                   boxShadow: const [
                     BoxShadow(
@@ -474,15 +476,20 @@ class _MapScreenState extends State<MapScreen> {
                               vertical: 8.0, horizontal: 16.0),
                           padding: const EdgeInsets.all(16.0),
                           decoration: BoxDecoration(
-                            color: CupertinoColors.white,
+                            color: CupertinoColors.systemBackground,
+                            border: Border.all(
+                              color: CupertinoColors.systemGrey4,
+                    
+                              width: 1.0,
+                            ),
                             borderRadius: BorderRadius.circular(12.0),
-                            boxShadow: const [
-                               BoxShadow(
-                                color: CupertinoColors.systemGrey4,
-                                blurRadius: 5,
-                                offset: Offset(0, 2),
-                              ),
-                            ],
+                            // boxShadow: const [
+                            //    BoxShadow(
+                            //     color: CupertinoColors.systemGrey4,
+                            //     blurRadius: 5,
+                            //     offset: Offset(0, 2),
+                            //   ),
+                            // ],
                           ),
                           child: Row(
                             children: [
@@ -524,9 +531,43 @@ class _MapScreenState extends State<MapScreen> {
               ),
             ),
           ),
+
+          Positioned(
+            bottom: 80.0,
+            right: 20.0,
+            child: CupertinoButton.filled(
+              padding: const EdgeInsets.all(12.0),
+              borderRadius: BorderRadius.circular(30.0),
+              onPressed: _zoomOut,
+              child: const Icon(
+                CupertinoIcons.zoom_out,
+              ),
+            ),
+          ),
+            
+          Positioned(
+            bottom: 140.0,
+            right: 20.0,
+            child: CupertinoButton.filled(
+              padding: const EdgeInsets.all(12.0),
+              borderRadius: BorderRadius.circular(30.0),
+              onPressed: _zoomIn,
+              child: const Icon(
+                CupertinoIcons.zoom_in,
+              ),
+            ),
+          ),
         ],
       ),
     );
+  }
+
+void _zoomIn() {
+    mapController.move(initialCenter, initialZoom + 2);
+  }
+
+  void _zoomOut() {
+    mapController.move(initialCenter, initialZoom );
   }
 }
 
