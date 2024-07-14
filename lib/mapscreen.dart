@@ -78,7 +78,7 @@ class _MapScreenState extends State<MapScreen> {
         final polygon = Polygon(
           points: points,
           color: visited
-              ? CupertinoColors.activeGreen
+              ? const Color.fromARGB(255, 93, 204, 121)
               : CupertinoColors.systemGrey4,
           borderColor: visited
               ? CupertinoColors.activeGreen
@@ -105,7 +105,7 @@ class _MapScreenState extends State<MapScreen> {
           final polygon = Polygon(
             points: points,
             color: visited
-                ? CupertinoColors.activeGreen
+                ? const Color.fromARGB(255, 93, 204, 121)
                 : CupertinoColors.systemGrey4,
             borderColor: visited
                 ? CupertinoColors.activeGreen
@@ -146,7 +146,7 @@ class _MapScreenState extends State<MapScreen> {
                       polygon.polygon = Polygon(
                         points: polygon.polygon.points,
                         color: polygon.visited
-                            ? CupertinoColors.activeGreen
+                            ? const Color.fromARGB(255, 93, 204, 121)
                             : CupertinoColors.systemGrey4,
                         borderColor: polygon.visited
                             ? CupertinoColors.activeGreen
@@ -178,7 +178,7 @@ class _MapScreenState extends State<MapScreen> {
       namedPolygon.visited = true;
       namedPolygon.polygon = Polygon(
         points: namedPolygon.polygon.points,
-        color: CupertinoColors.activeGreen,
+        color: const Color.fromARGB(255, 93, 204, 121),
         borderColor: CupertinoColors.activeGreen,
         borderStrokeWidth: 1.5,
         hitValue: namedPolygon.name,
