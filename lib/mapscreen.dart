@@ -1,6 +1,8 @@
 import 'dart:convert';
+import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_geojson/flutter_map_geojson.dart';
 import 'package:latlong2/latlong.dart';
@@ -30,26 +32,67 @@ class _MapScreenState extends State<MapScreen> {
   void initState() {
     super.initState();
     _loadPreferences();
-    _loadGeoJson();
+    _loadGeoJsonInIsolate();
   }
 
   Future<void> _loadPreferences() async {
     prefs = await SharedPreferences.getInstance();
   }
 
-  Future<void> _loadGeoJson() async {
+  Future<void> _loadGeoJsonInIsolate() async {
     try {
       final geoJSONfile = await rootBundle.loadString('assets/data.geojson');
       final geoJsonData = json.decode(geoJSONfile);
       final features = geoJsonData['features'] as List;
 
-      for (var municipio in features) {
-        final nombre = municipio['properties']['NOMBRE'];
-        final geometry = municipio['geometry'];
-        final coordinates = geometry['coordinates'][0] as List;
+      // Procesar en un isolate separado
+      List<NamedPolygon> polygons = await compute(_processGeoJson, features);
+      setState(() {
+        namedPolygons = polygons;
+      });
+    } catch (e) {
+      // print('Error loading GeoJSON: $e');
+    }
+  }
 
-        if (geometry['type'] == 'Polygon') {
-          final points = coordinates.map<LatLng>((e) {
+  List<NamedPolygon> _processGeoJson(List features) {
+    List<NamedPolygon> polygons = [];
+    
+
+    for (var municipio in features) {
+      final nombre = municipio['properties']['NOMBRE'];
+      final geometry = municipio['geometry'];
+      final coordinates = geometry['coordinates'][0] as List;
+
+      if (geometry['type'] == 'Polygon') {
+        final points = coordinates.map<LatLng>((e) {
+          if (e is List && e.length == 2) {
+            return LatLng(e[1], e[0]);
+          } else {
+            throw Exception('Invalid coordinate format');
+          }
+        }).toList();
+
+        final visited = prefs?.getBool(nombre) ?? false;
+
+        final polygon = Polygon(
+          points: points,
+          color: visited
+              ? CupertinoColors.activeGreen
+              : CupertinoColors.systemGrey4,
+          borderColor: visited
+              ? CupertinoColors.activeGreen
+              : CupertinoColors.systemGrey2,
+          borderStrokeWidth: 1.5,
+          hitValue: nombre,
+        );
+
+        polygons.add(NamedPolygon(nombre, polygon, visited));
+      } else if (geometry["type"] == "MultiPolygon") {
+        final coordinates = geometry['coordinates'] as List;
+
+        for (var coord in coordinates) {
+          final points = coord[0].map<LatLng>((e) {
             if (e is List && e.length == 2) {
               return LatLng(e[1], e[0]);
             } else {
@@ -71,42 +114,13 @@ class _MapScreenState extends State<MapScreen> {
             hitValue: nombre,
           );
 
-          namedPolygons.add(NamedPolygon(nombre, polygon, visited));
-        } else if (geometry["type"] == "MultiPolygon") {
-          final coordinates = geometry['coordinates'] as List;
-
-          for (var coord in coordinates) {
-            final points = coord[0].map<LatLng>((e) {
-              if (e is List && e.length == 2) {
-                return LatLng(e[1], e[0]);
-              } else {
-                throw Exception('Invalid coordinate format');
-              }
-            }).toList();
-
-            final visited = prefs?.getBool(nombre) ?? false;
-
-            final polygon = Polygon(
-              points: points,
-              color: visited
-                  ? CupertinoColors.activeGreen
-                  : CupertinoColors.systemGrey4,
-              borderColor: visited
-                  ? CupertinoColors.activeGreen
-                  : CupertinoColors.systemGrey2,
-              borderStrokeWidth: 1.5,
-              hitValue: nombre,
-            );
-
-            namedPolygons.add(NamedPolygon(nombre, polygon, visited));
-          }
+          polygons.add(NamedPolygon(nombre, polygon, visited));
         }
       }
-
-      setState(() {});
-    } catch (e) {
-      // print('Error loading GeoJSON: $e');
     }
+
+    return polygons;
+
   }
 
   void _showMunicipalityName(NamedPolygon namedPolygon) {
