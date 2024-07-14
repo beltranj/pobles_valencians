@@ -287,7 +287,7 @@ class _MapScreenState extends State<MapScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'Pots enviar suggeriments a través de X o Instagram (@beltrnjordi) o a través del correu electrònic)',
+                'Pots enviar suggeriments a través de X o Instagram (@beltrnjordi) o a través del següent formulari de Google)',
               ),
             ],
           ),
