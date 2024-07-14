@@ -62,8 +62,8 @@ class _MapScreenState extends State<MapScreen> {
           final polygon = Polygon(
             points: points,
             color: visited
-                ? CupertinoColors.activeGreen.withOpacity(0.5)
-                : CupertinoColors.systemGrey4.withOpacity(0.3),
+                ? CupertinoColors.activeGreen
+                : CupertinoColors.systemGrey4,
             borderColor: visited
                 ? CupertinoColors.activeGreen
                 : CupertinoColors.systemGrey2,
@@ -89,8 +89,8 @@ class _MapScreenState extends State<MapScreen> {
             final polygon = Polygon(
               points: points,
               color: visited
-                  ? CupertinoColors.activeGreen.withOpacity(0.5)
-                  : CupertinoColors.systemGrey4.withOpacity(0.3),
+                  ? CupertinoColors.activeGreen
+                  : CupertinoColors.systemGrey4,
               borderColor: visited
                   ? CupertinoColors.activeGreen
                   : CupertinoColors.systemGrey2,
@@ -132,8 +132,8 @@ class _MapScreenState extends State<MapScreen> {
                       polygon.polygon = Polygon(
                         points: polygon.polygon.points,
                         color: polygon.visited
-                            ? CupertinoColors.activeGreen.withOpacity(0.5)
-                            : CupertinoColors.systemGrey4.withOpacity(0.3),
+                            ? CupertinoColors.activeGreen
+                            : CupertinoColors.systemGrey4,
                         borderColor: polygon.visited
                             ? CupertinoColors.activeGreen
                             : CupertinoColors.systemGrey2,
@@ -164,7 +164,7 @@ class _MapScreenState extends State<MapScreen> {
       namedPolygon.visited = true;
       namedPolygon.polygon = Polygon(
         points: namedPolygon.polygon.points,
-        color: CupertinoColors.activeGreen.withOpacity(0.3),
+        color: CupertinoColors.activeGreen,
         borderColor: CupertinoColors.activeGreen,
         borderStrokeWidth: 1.5,
         hitValue: namedPolygon.name,
@@ -267,7 +267,7 @@ class _MapScreenState extends State<MapScreen> {
         polygon.visited = false;
         polygon.polygon = Polygon(
           points: polygon.polygon.points,
-          color: CupertinoColors.systemGrey4.withOpacity(0.3),
+          color: CupertinoColors.systemGrey4,
           borderColor: CupertinoColors.systemGrey2,
           borderStrokeWidth: 1.5,
           hitValue: polygon.name,
@@ -317,17 +317,17 @@ class _MapScreenState extends State<MapScreen> {
 
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
-        backgroundColor: CupertinoColors.systemGrey6.withOpacity(0.3),
+        backgroundColor: CupertinoColors.systemGrey6,
         leading: CupertinoButton(
           padding: EdgeInsets.zero,
-          child: const Icon(CupertinoIcons.settings),
           onPressed: _showConfigDialog,
+          child: const Icon(CupertinoIcons.settings),
         ),
         middle: const Text('Municipis de la Comunitat Valenciana'),
         trailing: CupertinoButton(
           padding: EdgeInsets.zero,
-          child: const Icon(CupertinoIcons.info),
           onPressed: _showAboutDialog,
+          child: const Icon(CupertinoIcons.info),
         ),
       ),
       child: Stack(
@@ -375,13 +375,13 @@ class _MapScreenState extends State<MapScreen> {
             right: screenWidth * 0.05,
             child: CupertinoSearchTextField(
               decoration: BoxDecoration(
-                color: CupertinoColors.systemGrey6.withOpacity(0.3),
+                color: CupertinoColors.systemGrey6,
                 borderRadius: BorderRadius.circular(12.0),
-                boxShadow: [
+                boxShadow: const [
                   BoxShadow(
-                    color: CupertinoColors.systemGrey6.withOpacity(0.3),
+                    color: CupertinoColors.systemGrey6,
                     blurRadius: 10.0,
-                    offset: const Offset(0, 5),
+                    offset: Offset(0, 5),
                   ),
                 ],
               ),
@@ -427,7 +427,7 @@ class _MapScreenState extends State<MapScreen> {
               right: screenWidth * 0.05,
               child: Container(
                 decoration: BoxDecoration(
-                  color: CupertinoColors.systemBackground.withOpacity(0.3),
+                  color: CupertinoColors.systemBackground,
                   borderRadius: BorderRadius.circular(12.0),
                   boxShadow: const [
                     BoxShadow(
@@ -462,12 +462,11 @@ class _MapScreenState extends State<MapScreen> {
                           decoration: BoxDecoration(
                             color: CupertinoColors.white,
                             borderRadius: BorderRadius.circular(12.0),
-                            boxShadow: [
-                              BoxShadow(
-                                color: CupertinoColors.systemGrey4
-                                    .withOpacity(0.2),
+                            boxShadow: const [
+                               BoxShadow(
+                                color: CupertinoColors.systemGrey4,
                                 blurRadius: 5,
-                                offset: const Offset(0, 2),
+                                offset: Offset(0, 2),
                               ),
                             ],
                           ),
@@ -481,7 +480,7 @@ class _MapScreenState extends State<MapScreen> {
                               Expanded(
                                 child: Text(
                                   item.name,
-                                  style: TextStyle(fontSize: 16.0),
+                                  style: const TextStyle(fontSize: 16.0),
                                 ),
                               ),
                               const Icon(
